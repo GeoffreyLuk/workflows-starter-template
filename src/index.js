@@ -1,23 +1,42 @@
 export default {
   async scheduled(event, env, ctx) {
-    const backendUrl = "https://wedding-backend-ik3r.onrender.com/api/health";
-    
-    const requestOptions = {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      }
-    };
+    // Scheduled events are triggered by cron.
+    // You can use ctx.waitUntil if you want to let work continue after the handler returns.
 
-    // Use ctx.waitUntil to ensure the request completes if the worker exits early
-    ctx.waitUntil(
-      fetch(backendUrl, requestOptions)
-        .then(response => {
-          if (!response.ok) {
-            console.error(`Backend responded with status: ${response.status}`);
-          }
-        })
-        .catch(error => console.error("API Call Failed:", error))
-    );
+    ctx.waitUntil(callExternalApi());
   },
+
+  // Optional: allow manual testing via HTTP
+  async fetch(request, env, ctx) {
+    if (request.method !== "POST") {
+      return new Response("Send a POST request to trigger the API call.", { status: 405 });
+    }
+    ctx.waitUntil(callExternalApi());
+    return new Response("Triggered API call.", { status: 200 });
+  }
 };
+
+async function callExternalApi() {
+  const url = "https://wedding-backend-ik3r.onrender.com/api/health"; // set in wrangler secrets or via env
+
+  if (!url) {
+    console.error("Missing env.API_URL");
+    return;
+  }
+
+  const resp = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Accept": "application/json"
+    }
+  });
+
+  const text = await resp.text();
+
+  if (!resp.ok) {
+    console.error(`API call failed: ${resp.status} ${resp.statusText}`, text);
+    return;
+  }
+
+  console.log("API call success:", resp.status, text);
+}

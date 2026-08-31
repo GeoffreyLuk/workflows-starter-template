@@ -1,6 +1,9 @@
-name = "backend-scheduler"
+name = "my-worker"
 main = "src/index.js"
-compatibility_date = "2024-01-01"
+compatibility_date = "2026-08-01"
 
 [triggers]
-crons = ["*/14 * * * *"] # Runs every 14 minutes
+# Fires every 14 minutes.
+# Note: Cron fields are in UTC; also, some schedulers can be interpreted in a way that
+# may require testing to ensure exact cadence matches your expectation.
+crons = ["*/14 * * * *"]
